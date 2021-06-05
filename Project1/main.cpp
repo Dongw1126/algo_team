@@ -19,5 +19,5 @@ int main()
 
 	Map m(my_map1);
 	robot a;
-	a.randomMove(m, 1);
+	a.zigzagMove(m, 1);
 }

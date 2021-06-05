@@ -14,4 +14,3 @@ Map::Map(vector<vector<int> >& _map) {
 		}
 	}
 }
-
