@@ -88,6 +88,13 @@ void robot::zigzagMove(Map map, int type)
     int time_limit = 100; // 시간 제한
 
     int coverage = 0; // 청소 면적
+    int room_size = 0; // 방 면적(벽제외)
+
+    for (int i = 0; i < map.width; i++)
+        for (int j = 0; j < map.height; j++)
+            if (map.map[i][j] != 1)
+                room_size++;
+
     int map_size = map.width * map.height;
     int dir;
     enum dirc {DOWN,UP,RIGHT,LEFT};
@@ -148,7 +155,7 @@ void robot::zigzagMove(Map map, int type)
 
         for (int i = 0; i < map.width; i++)
             for (int j = 0; j < map.height; j++)
-                if (map.map[i][j] != 0)
+                if (map.map[i][j] == 3)
                     coverage++;
 
         // 1번 : 시간제한을 두고 알고리즘을 수행
@@ -160,7 +167,7 @@ void robot::zigzagMove(Map map, int type)
 
         // 2번 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
         if (type == 2) {
-            if (coverage == map_size) {
+            if (coverage / room_size == 1) {
                 break;
             }
         }
@@ -185,8 +192,8 @@ void robot::zigzagMove(Map map, int type)
     cout << map_size << " ";
 
     // 청소 면적 출력
-    float coverage_rate = ((float)coverage / (map.width * map.height)) * 100;
-    cout << coverage << " ";
+    float coverage_rate = ((float)coverage / (float)room_size) * 100;
+    cout << coverage_rate << " ";
 
     // 연산 횟수 출력
     cout << calc_cost << " ";
@@ -212,6 +219,12 @@ void robot::randomMove(Map map, int type)
     int time_cost = 0; // 소요 시간
     int time_limit = 100; // 시간 제한
     int coverage = 0; // 청소 면적
+    int room_size = 0; // 방 면적(벽제외)
+
+    for (int i = 0; i < map.width; i++)
+        for (int j = 0; j < map.height; j++)
+            if (map.map[i][j] != 1)
+                room_size++;
 
     int map_size = map.width * map.height;
 
@@ -246,9 +259,10 @@ void robot::randomMove(Map map, int type)
         }
 
         coverage = 0;
+
         for (int i = 0; i < map.width; i++)
             for (int j = 0; j < map.height; j++)
-                if (map.map[i][j] != 0)
+                if (map.map[i][j] == 3)
                     coverage++;
 
         // 1번 : 시간제한을 두고 알고리즘을 수행
@@ -260,7 +274,7 @@ void robot::randomMove(Map map, int type)
 
         // 2번 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
         if (type == 2) {
-            if (coverage == map_size) {
+            if (coverage/room_size == 1) {
                 break;
             }
         }
@@ -285,8 +299,8 @@ void robot::randomMove(Map map, int type)
     cout << map_size << " ";
 
     // 청소 면적 출력
-    float coverage_rate = ((float)coverage / (map.width * map.height)) * 100;
-    cout << coverage << " ";
+    float coverage_rate = ((float)coverage / (float)room_size ) * 100;
+    cout << coverage_rate << " ";
 
     // 연산 횟수 출력
     cout << calc_cost << " ";
