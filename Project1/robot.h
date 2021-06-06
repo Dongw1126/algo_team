@@ -83,64 +83,96 @@ void robot::zigzagMove(Map map, int type)
 
     srand((unsigned)time(NULL));
 
-    int calc_cost = 0; // 연산 횟수
+    int map_calc = 0;
+    int memory_calc = 0;
+    int move_calc = 0;
+    int calc_cost = 0; 
+    //연산 종류별로 계산비용 구분
+
     int time_cost = 0; // 소요 시간
-    int time_limit = 100; // 시간 제한
+    int time_limit = 100; // 시간 제한(잔여 배터리)
+    int half_time_limit = time_limit / 2;
 
     int coverage = 0; // 청소 면적
-    int room_size = 0; // 방 면적(벽제외)
-
+    int room_size = 0; // 방 면적
     for (int i = 0; i < map.width; i++)
         for (int j = 0; j < map.height; j++)
             if (map.map[i][j] != 1)
                 room_size++;
+    int map_size = map.width * map.height; //전체 면적
 
-    int map_size = map.width * map.height;
-    int dir;
-    enum dirc {DOWN,UP,RIGHT,LEFT};
-
-    // 복귀 경로
-    vector<pair<int, int> > back_path;
-    int half_time_limit = time_limit / 2;
+    enum dirc {DOWN,UP,RIGHT,LEFT}; //방향 가독성
+  
+    vector<pair<int, int> > back_path; //백트래킹용 추가 메모리
+    
 
     while (true) 
     {
         while ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) || (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) ||
             (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1)) 
         {
+
             map.map[this->x][this->y] = 3; // 청소 완료 표시
+            map_calc += 1;
 
             if ((map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1) && (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 3))
             {
                 this->x += dx[LEFT];
                 this->y += dy[LEFT];
-                dir = LEFT;
+                map.map[this->x][this->y] = 2;    
+                move_calc += 1;
+
+                back_path.push_back({ dx[LEFT] * (-1), dy[LEFT] * (-1) });
+                memory_calc += 1;
             }
             else if ((map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) && (map.map[this->x + dx[UP]][this->y + dy[UP]] != 3))
             {
                 this->x += dx[UP];
                 this->y += dy[UP];
-                dir = UP;
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
+
+                back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
+                memory_calc += 1;
             }
             else if ((map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) && (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 3))
             {
                 this->x += dx[RIGHT];
                 this->y += dy[RIGHT];
-                dir = RIGHT;
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
+
+                back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) }); 
+                memory_calc += 1;
             }
             else if ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) && (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 3))
             {
                 this->x += dx[DOWN];
                 this->y += dy[DOWN];
-                dir = DOWN;
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
+
+                back_path.push_back({ dx[DOWN] * (-1), dy[DOWN] * (-1) });
+                memory_calc += 1;
             }
-            
-            map.map[this->x][this->y] = 2;
+            //사방이 벽 혹은 이미 청소했던 공간일 경우, 가장 가까운 빈공간으로 백트래킹하여 이동
+            else /*if (!((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0) || (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0) ||   
+                 (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0)))*/
+            {
+                int i = back_path.size() - 1;
+                
+                this->x += back_path[i].first;
+                this->y += back_path[i].second;
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
 
-            back_path.push_back({ dx[dir] * (-1), dy[dir] * (-1) });
+                back_path.pop_back();
+                memory_calc += 1;
+            }
 
-
+            calc_cost = map_calc + move_calc + memory_calc;
             time_cost++;
+
             if (type == 1) {
                 if (half_time_limit <= time_cost) {
                     break;
@@ -160,6 +192,10 @@ void robot::zigzagMove(Map map, int type)
 
         // 1번 : 시간제한을 두고 알고리즘을 수행
         if (type == 1) {
+            if (coverage / room_size == 1) {
+                break;
+            }
+
             if (half_time_limit <= time_cost) {
                 break;
             }
@@ -176,6 +212,7 @@ void robot::zigzagMove(Map map, int type)
     // 시작 위치 복귀
     for (int i = back_path.size() - 1; i >= 0; i--) {
         map.map[this->x][this->y] = 3;
+
         this->x += back_path[i].first;
         this->y += back_path[i].second;
         map.map[this->x][this->y] = 2;
@@ -217,7 +254,7 @@ void robot::randomMove(Map map, int type)
 
     int calc_cost = 0; // 연산 횟수
     int time_cost = 0; // 소요 시간
-    int time_limit = 100; // 시간 제한
+    int time_limit = 100; // 시간 제한(잔여 배터리)
     int coverage = 0; // 청소 면적
     int room_size = 0; // 방 면적(벽제외)
 
@@ -267,6 +304,11 @@ void robot::randomMove(Map map, int type)
 
         // 1번 : 시간제한을 두고 알고리즘을 수행
         if (type == 1) {
+
+            if (coverage / room_size == 1) {
+                break;
+            }
+
             if (half_time_limit <= time_cost) {
                 break;
             }

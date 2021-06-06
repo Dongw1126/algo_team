@@ -1,0 +1,3 @@
+﻿  main.cpp
+C:\VSprojects\Algorithm_project\Project1\main.cpp(10,18): warning C4101: 'battery': unreferenced local variable
+  Project1.vcxproj -> C:\VSprojects\Algorithm_project\Debug\Alogrithm_project.exe
