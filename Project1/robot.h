@@ -69,18 +69,6 @@ void robot::renderMap(Map& map) {
 
 void robot::zigzagMove(Map map, int type)
 {
-    for (int i = 0; i < map.width; i++) 
-    {
-        for (int j = 0; j < map.height; j++) 
-        {
-            if (map.map[i][j] == 2) 
-            {
-                this->x = i;
-                this->y = j;
-            }
-        }
-    }
-
     srand((unsigned)time(NULL));
 
     int map_calc = 0;
@@ -101,14 +89,35 @@ void robot::zigzagMove(Map map, int type)
                 room_size++;
     int map_size = map.width * map.height; //전체 면적
 
+    
     enum dirc {DOWN,UP,RIGHT,LEFT}; //방향 가독성
   
-    vector<pair<int, int> > back_path; //백트래킹용 추가 메모리
+    vector<pair<int, int> > back_path; //백트래킹용 추가 내장 메모리
     
+    int iX; //시작 좌표 저장
+    int iY;
 
+    // 로봇 시작위치 찾기
+    for (int i = 0; i < map.width; i++)
+    {
+        for (int j = 0; j < map.height; j++)
+        {
+            if (map.map[i][j] == 2)
+            {
+                this->x = i;
+                this->y = j;
+                iX = i;
+                iY = j;
+                memory_calc += 1;
+                break;
+            }
+        }
+    }
+
+    // 1칸 이동
     while (true) 
     {
-        while ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) || (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) ||
+        if ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) || (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) ||
             (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1)) 
         {
 
@@ -159,31 +168,32 @@ void robot::zigzagMove(Map map, int type)
             else /*if (!((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0) || (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0) ||   
                  (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0)))*/
             {
-                int i = back_path.size() - 1;
-                
-                this->x += back_path[i].first;
-                this->y += back_path[i].second;
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+                if (back_path.size() > 0)
+                {
+                    int i = back_path.size() - 1;
 
-                back_path.pop_back();
-                memory_calc += 1;
-            }
+                    this->x += back_path[i].first;
+                    this->y += back_path[i].second;
+                    map.map[this->x][this->y] = 2;
+                    move_calc += 1;
 
-            calc_cost = map_calc + move_calc + memory_calc;
-            time_cost++;
-
-            if (type == 1) {
-                if (half_time_limit <= time_cost) {
-                    break;
+                    back_path.pop_back();
+                    memory_calc += 1;
+                }
+                else
+                {
+                    map.map[this->x][this->y] = 3;
+                    map_calc += 1;
                 }
             }
+
+            time_cost++;
 
             // 청소 과정 출력 (데모 동영상 용)
             this->renderMap(map);
         }
 
-        coverage = 0;
+        coverage = 1; // 로봇 위치 제외
 
         for (int i = 0; i < map.width; i++)
             for (int j = 0; j < map.height; j++)
@@ -192,10 +202,6 @@ void robot::zigzagMove(Map map, int type)
 
         // 1번 : 시간제한을 두고 알고리즘을 수행
         if (type == 1) {
-            if (coverage / room_size == 1) {
-                break;
-            }
-
             if (half_time_limit <= time_cost) {
                 break;
             }
@@ -209,21 +215,221 @@ void robot::zigzagMove(Map map, int type)
         }
     }
 
-    // 시작 위치 복귀
-    for (int i = back_path.size() - 1; i >= 0; i--) {
-        map.map[this->x][this->y] = 3;
+    // 청소 완료 후 시작 위치로 복귀
+    for (int i = back_path.size() - 1; i >= 0; i--)
+    {
+        if (this->x == iX && this->y == iY)
+            break;
 
-        this->x += back_path[i].first;
-        this->y += back_path[i].second;
-        map.map[this->x][this->y] = 2;
+        if (this->y - iY >= 0) //로봇이 시작점의 오른쪽방향
+        {
+            if (this->x - iX <= 0) // 로봇이 시작점의 오른쪽 위 방향, 유효 : 왼쪽, 아래
+            {
 
-        calc_cost += 3;
-        time_cost++;
+                map.map[this->x][this->y] = 3;
+                switch (back_path[i].first)
+                {
+                case 0:
 
-        this->renderMap(map);
+                    if (back_path[i].second == 1) // 오른쪽이동
+                    {
+                        if (((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 1) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 1)) 
+                            && (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1)) // 아래쪽 또는 왼쪽에 벽이 있고, 우측으로 진행가능할때만
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    else //  왼쪽이동
+                    {
+                        if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1)
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    break;
+
+                case -1: // 위로 이동               
+                    if (((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 1) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 1))
+                        && (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1)) // 아래쪽 또는 왼쪽에 벽이 있고, 위로 진행가능할때만
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+
+                case 1: // 아래로 이동               
+                    if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1)
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+                }
+
+                map.map[this->x][this->y] = 2;
+                back_path.pop_back();
+                this->renderMap(map);
+
+            }
+
+            else // 로봇이 시작점의 오른쪽 아래 방향, 유효 : 왼쪽, 위
+            {
+                map.map[this->x][this->y] = 3;
+                switch (back_path[i].first)
+                {
+                case 0:
+
+                    if (back_path[i].second == 1) // 오른쪽이동
+                    {
+                        if (((map.map[this->x + dx[UP]][this->y + dy[UP]] == 1) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 1))
+                            && (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1)) // 위쪽 또는 왼쪽에 벽이 있고 진행가능할때
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    else //  왼쪽이동
+                    {
+                        if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1) // 왼쪽으로 진행할 수 있을때만
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    break;
+
+                case -1: // 위로 이동               
+                    if (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) // 위로 진행할 수 있을때만
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+
+                case 1: // 아래로 이동 
+                    if (((map.map[this->x + dx[UP]][this->y + dy[UP]] == 1) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 1))
+                        && (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1))// 위쪽 또는 왼쪽에 벽이 있고, 진행할 수 있을때
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+                }
+                map.map[this->x][this->y] = 2;
+                back_path.pop_back();
+                this->renderMap(map);
+                
+            }
+        }
+
+        else // 로봇이 시작지점 왼쪽방향
+        {
+            if (this->x - iX <= 0) // 로봇이 시작점의 왼쪽 위 방향, 유효 : 오른쪽, 아래
+            {
+                map.map[this->x][this->y] = 3;
+                switch (back_path[i].first)
+                {
+                case 0:
+
+                    if (back_path[i].second == 1) // 오른쪽이동
+                    {
+                        if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) //우측으로 진행가능할때만
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    else //  왼쪽이동
+                    {
+                        if (((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 1) || (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 1))
+                            && (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1))//오른쪽 또는 아래쪽에 벽이 있고, 왼쪽으로 진행가능할때만
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    break;
+
+                case -1: // 위로 이동               
+                    if (((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 1) || (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 1))
+                        && (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1))//오른쪽 또는 아래쪽에 벽이 있고, 위쪽으로 진행가능할때만
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+
+                case 1: // 아래로 이동               
+                    if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) // 아래로 진행할수 있을때만
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+                }
+
+                map.map[this->x][this->y] = 2;
+                back_path.pop_back();
+                this->renderMap(map);
+            }
+            else //로봇이 시작점의 왼쪽 아래 방향, 유효 : 오른쪽, 위
+            {
+                map.map[this->x][this->y] = 3;
+                switch (back_path[i].first)
+                {
+                case 0:
+
+                    if (back_path[i].second == 1) // 오른쪽이동
+                    {
+                        if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) //우측으로 진행가능할때만
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    else //  왼쪽이동
+                    {
+                        if (((map.map[this->x + dx[UP]][this->y + dy[UP]] == 1) || (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 1))
+                            && (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1))//위쪽 또는 오른쪽에 벽이 있고, 왼쪽으로 진행가능할때만
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    break;
+
+                case -1: // 위로 이동               
+                    if (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) // 위로 진행할 수 있을때만
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+
+                case 1: // 아래로 이동               
+                    if (((map.map[this->x + dx[UP]][this->y + dy[UP]] == 1) || (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 1))
+                        && (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1))//위쪽 또는 오른쪽에 벽이 있고, 아래쪽으로 진행가능할때만
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+                }
+
+                map.map[this->x][this->y] = 2;
+                back_path.pop_back();
+                this->renderMap(map);
+            }
+        }
     }
 
-    cout << "맵크기 커버리지 연산횟수 소요시간" << endl;
+    this->renderMap(map);
+    
+    calc_cost = map_calc + move_calc + memory_calc;
+
+    cout << "맵크기    커버리지    연산횟수    소요시간" << endl;
 
     // 맵 크기 출력
     cout << map_size << " ";
@@ -316,7 +522,7 @@ void robot::randomMove(Map map, int type)
 
         // 2번 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
         if (type == 2) {
-            if (coverage/room_size == 1) {
+            if (coverage / room_size == 1) {
                 break;
             }
         }
