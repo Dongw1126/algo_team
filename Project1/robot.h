@@ -218,12 +218,15 @@ void robot::zigzagMove(Map map, int type)
     // 청소 완료 후 시작 위치로 복귀
     for (int i = back_path.size() - 1; i >= 0; i--)
     {
+        //출발점으로 돌아왔을시에 정지한다
         if (this->x == iX && this->y == iY)
             break;
 
-        if (this->y - iY >= 0) //로봇이 시작점의 오른쪽방향
+        //로봇이 시작점의 오른쪽방향
+        if (this->y - iY > 0) 
         {
-            if (this->x - iX <= 0) // 로봇이 시작점의 오른쪽 위 방향, 유효 : 왼쪽, 아래
+            // 로봇이 시작점의 오른쪽 위 방향, 유효 : 왼쪽, 아래
+            if (this->x - iX < 0) 
             {
 
                 map.map[this->x][this->y] = 3;
@@ -268,13 +271,9 @@ void robot::zigzagMove(Map map, int type)
                     break;
                 }
 
-                map.map[this->x][this->y] = 2;
-                back_path.pop_back();
-                this->renderMap(map);
-
             }
-
-            else // 로봇이 시작점의 오른쪽 아래 방향, 유효 : 왼쪽, 위
+            // 로봇이 시작점의 오른쪽 아래 방향, 유효 : 왼쪽, 위
+            else if (this->x - iX > 0)
             {
                 map.map[this->x][this->y] = 3;
                 switch (back_path[i].first)
@@ -317,16 +316,23 @@ void robot::zigzagMove(Map map, int type)
                     }
                     break;
                 }
-                map.map[this->x][this->y] = 2;
-                back_path.pop_back();
-                this->renderMap(map);
                 
             }
-        }
+            // 로봇이 출발점과 같은 y축 위에있을때
+            else 
+            {
 
-        else // 로봇이 시작지점 왼쪽방향
+            }
+
+            map.map[this->x][this->y] = 2;
+            back_path.pop_back();
+            this->renderMap(map);
+        }
+        // 로봇이 시작지점 왼쪽방향
+        else if (this->y - iY < 0 )
         {
-            if (this->x - iX <= 0) // 로봇이 시작점의 왼쪽 위 방향, 유효 : 오른쪽, 아래
+            // 로봇이 시작점의 왼쪽 위 방향, 유효 : 오른쪽, 아래
+            if (this->x - iX <= 0) 
             {
                 map.map[this->x][this->y] = 3;
                 switch (back_path[i].first)
@@ -370,11 +376,9 @@ void robot::zigzagMove(Map map, int type)
                     break;
                 }
 
-                map.map[this->x][this->y] = 2;
-                back_path.pop_back();
-                this->renderMap(map);
             }
-            else //로봇이 시작점의 왼쪽 아래 방향, 유효 : 오른쪽, 위
+            //로봇이 시작점의 왼쪽 아래 방향, 유효 : 오른쪽, 위
+            else 
             {
                 map.map[this->x][this->y] = 3;
                 switch (back_path[i].first)
@@ -418,28 +422,35 @@ void robot::zigzagMove(Map map, int type)
                     break;
                 }
 
-                map.map[this->x][this->y] = 2;
-                back_path.pop_back();
-                this->renderMap(map);
+                
             }
         }
+        // 로봇이 출발점과 같은 y축 위에있을때
+        else 
+        {
+
+        }
+
+        map.map[this->x][this->y] = 2;
+        back_path.pop_back();
+        this->renderMap(map);
     }
 
     this->renderMap(map);
     
     calc_cost = map_calc + move_calc + memory_calc;
 
-    cout << "맵크기    커버리지    연산횟수    소요시간" << endl;
+    cout << "맵크기 / 커버리지 / 연산횟수 / 소요시간" << endl;
 
     // 맵 크기 출력
-    cout << map_size << " ";
+    cout << map_size << " \t";
 
     // 청소 면적 출력
     float coverage_rate = ((float)coverage / (float)room_size) * 100;
-    cout << coverage_rate << " ";
+    cout << coverage_rate << " \t";
 
     // 연산 횟수 출력
-    cout << calc_cost << " ";
+    cout << calc_cost << " \t";
 
     // 소요 시간 출력
     cout << time_cost << " ";
