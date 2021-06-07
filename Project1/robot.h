@@ -494,7 +494,7 @@ void robot::spinMove(Map map, int type)
                     map.map[this->x][this->y] = 2;
                     move_calc += 1;
 
-                    back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
+                    back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) });
                     memory_calc += 1;
                 }
                 else if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0) // #2
@@ -574,42 +574,54 @@ void robot::spinMove(Map map, int type)
 
         if (traceflag == true)
         {
-            traceflag = false;
-            if (back_path.size() > 0)
-            {
-                int i = back_path.size() - 1;
-                map.map[this->x][this->y] = 3;
-
-                this->x += back_path[i].first;
-                this->y += back_path[i].second;
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
-
-                switch (back_path[i].first)
+            /*while (!((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0) || (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0)
+                || (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0)))
+            {*/
+                if (back_path.size() > 0)
                 {
-                case 1:
-                    dir = RIGHT;
-                    break;
-                case -1:
-                    dir = LEFT;
-                    break;
-                case 0:
-                    if (back_path[i].second == 1)
-                        dir = UP;
-                    else if (back_path[i].second == -1)
-                        dir = DOWN;
-                    break;
+                    int i = back_path.size() - 1;
+                    map.map[this->x][this->y] = 3;
 
+                    this->x += back_path[i].first;
+                    this->y += back_path[i].second;
+                    map.map[this->x][this->y] = 2;
+                    move_calc += 1;
+
+                    switch (back_path[i].first)
+                    {
+                    case 1:
+                        dir = RIGHT;
+                        break;
+                    case -1:
+                        dir = LEFT;
+                        break;
+                    case 0:
+                        if (back_path[i].second == 1)
+                            dir = UP;
+                        else if (back_path[i].second == -1)
+                            dir = DOWN;
+                        break;
+
+                    }
+
+                    back_path.pop_back();
+                    memory_calc += 1;
+
+                    //i--;
+
+                    this->renderMap(map);
+                    time_cost++;
+
+                    
                 }
+                else
+                {
+                    map.map[this->x][this->y] = 3;
+                    map_calc += 1;
+                }
+           // }
 
-                back_path.pop_back();
-                memory_calc += 1;
-            }
-            else
-            {
-                map.map[this->x][this->y] = 3;
-                map_calc += 1;
-            }
+            traceflag = false;
         }
 
         time_cost++;
