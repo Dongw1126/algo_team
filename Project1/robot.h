@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <windows.h>
+#include <time.h>
 #include "map.h"
 
 using namespace std;
@@ -13,572 +14,558 @@ int dy[4] = { 0,0,1,-1 };
 class robot
 {
 private:
-    int x, y;
+	int x, y;
 public:
-    robot();
+	robot();
 
-    // type 1 : 시간 제한을 두고 알고리즘 수행
-    // type 2 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
-    void randomMove(Map map, int type);
-    void spinMove(Map map, int type);
-    void zigzagMove(Map map, int type);
-    void printMap(Map& map);
-    void renderMap(Map& map);
+	// type 1 : 시간 제한을 두고 알고리즘 수행
+	// type 2 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
+	void randomMove(Map map, int type);
+	void spinMove(Map map, int type);
+	void zigzagMove(Map map, int type);
+	void printMap(Map& map);
+	void renderMap(Map& map);
 };
 
 robot::robot() {
-    x = 0; y = 0;
+	x = 0; y = 0;
 }
 
 void robot::printMap(Map& map)
 {
-    const string a = "■";  //벽
-    const string b = "□";  //청소하지 않은공간
-    const string c = "◆"; //로봇청소기
-    const string d = "▦"; // 청소 완료
+	const string a = "■";  //벽
+	const string b = "□";  //청소하지 않은공간
+	const string c = "◆"; //로봇청소기
+	const string d = "▦"; // 청소 완료
 
-    for (int i = 0; i < map.width; i++)
-    {
-        for (int j = 0; j < map.height; j++)
-        {
-            switch (map.map[i][j])
-            {
-            case 0:
-                cout << b;
-                break;
-            case 1:
-                cout << a;
-                break;
-            case 2:
-                cout << c;
-                break;
-            case 3:
-                cout << d;
-                break;
-            }
-        }
-        cout << endl;
-    }
+	for (int i = 0; i < map.width; i++)
+	{
+		for (int j = 0; j < map.height; j++)
+		{
+			switch (map.map[i][j])
+			{
+			case 0:
+				cout << b;
+				break;
+			case 1:
+				cout << a;
+				break;
+			case 2:
+				cout << c;
+				break;
+			case 3:
+				cout << d;
+				break;
+			}
+		}
+		cout << endl;
+	}
 }
 
 void robot::renderMap(Map& map) {
-    system("cls");
-    this->printMap(map);
-    Sleep(10);
+	system("cls");
+	this->printMap(map);
+	Sleep(10);
 }
 
 void robot::zigzagMove(Map map, int type)
 {
-    srand((unsigned)time(NULL));
+	for (int i = 0; i < map.width; i++)
+	{
+		for (int j = 0; j < map.height; j++)
+		{
+			if (map.map[i][j] == 2)
+			{
+				this->x = i;
+				this->y = j;
+			}
+		}
+	}
 
-    int map_calc = 0;
-    int memory_calc = 0;
-    int move_calc = 0;
-    int calc_cost = 0;
-    //연산 종류별로 계산비용 구분
+	srand((unsigned)time(NULL));
 
-    int time_cost = 0; // 소요 시간
-    int time_limit = 100; // 시간 제한(잔여 배터리)
+	int map_calc = 0;
+	int memory_calc = 0;
+	int move_calc = 0;
+	int calc_cost = 0;
+	//연산 종류별로 계산비용 구분
 
-    int coverage = 0; // 청소 면적
-    int room_size = 0; // 방 면적
-    for (int i = 0; i < map.width; i++)
-        for (int j = 0; j < map.height; j++)
-            if (map.map[i][j] != 1)
-                room_size++;
-    int map_size = map.width * map.height; //전체 면적
+	int time_cost = 0; // 소요 시간
+	int time_limit = 100; // 시간 제한(잔여 배터리)
+	int half_time_limit = time_limit / 2;
+
+	int coverage = 0; // 청소 면적
+	int room_size = 0; // 방 면적
+	for (int i = 0; i < map.width; i++)
+		for (int j = 0; j < map.height; j++)
+			if (map.map[i][j] != 1)
+				room_size++;
+	int map_size = map.width * map.height; //전체 면적
+
+	int dir;
+	enum dirc { DOWN, UP, RIGHT, LEFT }; //방향 가독성
+
+	vector<pair<int, int> > back_path; //백트래킹용 추가 메모리
+
+	dir = LEFT;
 
 
-    enum dirc { DOWN, UP, RIGHT, LEFT }; //방향 가독성
+	while (true)
+	{
+		while ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) || (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) ||
+			(map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1))
+		{
 
-    vector<pair<int, int> > back_path; //백트래킹용 추가 내장 메모리
+			
 
-    // 로봇 시작위치 찾기
-    for (int i = 0; i < map.width; i++)
-    {
-        for (int j = 0; j < map.height; j++)
-        {
-            if (map.map[i][j] == 2)
-            {
-                this->x = i;
-                this->y = j;
-                memory_calc += 1;
-                break;
-            }
-        }
-    }
+			if ((map.map[this->x + dx[dir]][this->y + dy[dir]] != 1) && (map.map[this->x + dx[dir]][this->y + dy[dir]] != 3))	//로봇 방향 기준, 앞이 벽이나, 청소한 곳이 아닐경우
+			{
+				if (dir == LEFT)
+				{
+					if (map.map[this->x + dx[DOWN]][this->y + dx[DOWN]] == 0)	//장애물 지나치지 않도록 벽 돌기
+					{
+						map.map[this->x][this->y] = 3; // 청소 완료 표시
+						map_calc += 1;
 
-    // 1칸 이동
-    while (true)
-    {
-        map.map[this->x][this->y] = 3; // 청소 완료 표시
-        map_calc += 1;
+						dir = DOWN;
+						this->x += dx[dir];
+						this->y += dy[dir];
+						map.map[this->x][this->y] = 2;
+						move_calc += 1;
 
-        if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0)
-        {
-            this->x += dx[LEFT];
-            this->y += dy[LEFT];
-            map.map[this->x][this->y] = 2;
-            move_calc += 1;
+						back_path.push_back({ dx[dir] * (-1), dy[dir] * (-1) });
+						memory_calc += 1;
+					}
+					else if ((map.map[this->x + dx[DOWN]][this->y + dx[DOWN]] == 1) || (map.map[this->x + dx[DOWN]][this->y + dx[DOWN]] == 3))	// 아래가 청소한곳이거나 벽일 경우
+					{
+						map.map[this->x][this->y] = 3; // 청소 완료 표시
+						map_calc += 1;
 
-            back_path.push_back({ dx[LEFT] * (-1), dy[LEFT] * (-1) });
-            memory_calc += 1;
-        }
-        else if (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0)
-        {
-            this->x += dx[UP];
-            this->y += dy[UP];
-            map.map[this->x][this->y] = 2;
-            move_calc += 1;
+						dir = LEFT;
+						this->x += dx[dir];
+						this->y += dy[dir];
+						map.map[this->x][this->y] = 2;
+						move_calc += 1;
 
-            back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
-            memory_calc += 1;
-        }
-        else if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0)
-        {
-            this->x += dx[RIGHT];
-            this->y += dy[RIGHT];
-            map.map[this->x][this->y] = 2;
-            move_calc += 1;
+						back_path.push_back({ dx[dir] * (-1), dy[dir] * (-1) });
+						memory_calc += 1;
+					}
+				}
+				else if (dir == UP)
+				{
+					if (map.map[this->x + dx[LEFT]][this->y + dx[LEFT]] == 0)	//장애물 지나치지 않도록 벽 돌기
+					{
+						map.map[this->x][this->y] = 3; // 청소 완료 표시
+						map_calc += 1;
 
-            back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) });
-            memory_calc += 1;
-        }
-        else if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0 )
-        {
-            this->x += dx[DOWN];
-            this->y += dy[DOWN];
-            map.map[this->x][this->y] = 2;
-            move_calc += 1;
+						dir = LEFT;
+						this->x += dx[dir];
+						this->y += dy[dir];
+						map.map[this->x][this->y] = 2;
+						move_calc += 1;
 
-            back_path.push_back({ dx[DOWN] * (-1), dy[DOWN] * (-1) });
-            memory_calc += 1;
-        }
-        //사방이 벽 혹은 이미 청소했던 공간일 경우,저장해둔 가장 가까운 빈공간으로 이동
-        else
-        {
-            if (back_path.size() > 0)
-            {
-                int i = back_path.size() - 1;
+						back_path.push_back({ dx[dir] * (-1), dy[dir] * (-1) });
+						memory_calc += 1;
+					}
+					else if ((map.map[this->x + dx[LEFT]][this->y + dx[LEFT]] == 1) || (map.map[this->x + dx[LEFT]][this->y + dx[LEFT]] == 3))	// 아래가 청소한곳이거나 벽일 경우
+					{
+						map.map[this->x][this->y] = 3; // 청소 완료 표시
+						map_calc += 1;
 
-                this->x += back_path[i].first;
-                this->y += back_path[i].second;
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+						dir = UP;
+						this->x += dx[dir];
+						this->y += dy[dir];
+						map.map[this->x][this->y] = 2;
+						move_calc += 1;
 
-                back_path.pop_back();
-                memory_calc += 1;
-            }
-            else
-            {
-                map.map[this->x][this->y] = 3;
-                map_calc += 1;
-            }
-        }
+						back_path.push_back({ dx[dir] * (-1), dy[dir] * (-1) });
+						memory_calc += 1;
+					}
+				}
+				else if (dir == RIGHT)
+				{
+					if (map.map[this->x + dx[UP]][this->y + dx[UP]] == 0)	//장애물 지나치지 않도록 벽 돌기
+					{
+						map.map[this->x][this->y] = 3; // 청소 완료 표시
+						map_calc += 1;
 
-        time_cost++;
+						dir = UP;
+						this->x += dx[dir];
+						this->y += dy[dir];
+						map.map[this->x][this->y] = 2;
+						move_calc += 1;
 
-        // 청소 과정 출력 (데모 동영상 용)
-        this->renderMap(map);       
+						back_path.push_back({ dx[dir] * (-1), dy[dir] * (-1) });
+						memory_calc += 1;
+					}
+					else if ((map.map[this->x + dx[UP]][this->y + dx[UP]] == 1) || (map.map[this->x + dx[UP]][this->y + dx[UP]] == 3))	// 아래가 청소한곳이거나 벽일 경우
+					{
+						map.map[this->x][this->y] = 3; // 청소 완료 표시
+						map_calc += 1;
 
-        // 1번 : 시간제한을 두고 알고리즘을 수행
-        if (type == 1) {
-            if (time_limit <= time_cost) {
-                break;
-            }
-        }
+						dir = RIGHT;
+						this->x += dx[dir];
+						this->y += dy[dir];
+						map.map[this->x][this->y] = 2;
+						move_calc += 1;
 
-        coverage = 1;
-        // 커버리지 측정
-        for (int i = 0; i < map.width; i++)
-            for (int j = 0; j < map.height; j++)
-                if (map.map[i][j] == 3)
-                    coverage++;
+						back_path.push_back({ dx[dir] * (-1), dy[dir] * (-1) });
+						memory_calc += 1;
+					}
+				}
+				else if (dir == DOWN)
+				{
+					if (map.map[this->x + dx[RIGHT]][this->y + dx[RIGHT]] == 0)	//장애물 지나치지 않도록 벽 돌기
+					{
+						map.map[this->x][this->y] = 3; // 청소 완료 표시
+						map_calc += 1;
 
-        // 2번 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
-        if (type == 2) {
-            if (coverage / room_size == 1) {
-                break;
-            }
-        }
-    }
-    
+						dir = RIGHT;
+						this->x += dx[dir];
+						this->y += dy[dir];
+						map.map[this->x][this->y] = 2;
+						move_calc += 1;
 
-    this->renderMap(map);
+						back_path.push_back({ dx[dir] * (-1), dy[dir] * (-1) });
+						memory_calc += 1;
+					}
+					else if ((map.map[this->x + dx[RIGHT]][this->y + dx[RIGHT]] == 1) || (map.map[this->x + dx[RIGHT]][this->y + dx[RIGHT]] == 3))	// 아래가 청소한곳이거나 벽일 경우
+					{
+						map.map[this->x][this->y] = 3; // 청소 완료 표시
+						map_calc += 1;
 
-    calc_cost = map_calc + move_calc + memory_calc;
+						dir = DOWN;
+						this->x += dx[dir];
+						this->y += dy[dir];
+						map.map[this->x][this->y] = 2;
+						move_calc += 1;
 
-    cout << "맵크기 / 커버리지 / 연산횟수 / 소요시간" << endl;
+						back_path.push_back({ dx[dir] * (-1), dy[dir] * (-1) });
+						memory_calc += 1;
+					}
+				}
+				
+			}			
+			//사방이 벽 혹은 이미 청소했던 공간일 경우, 가장 가까운 빈공간으로 백트래킹하여 이동
+			else /*if (!((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0) || (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0) ||
+				 (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0)))*/
+			{
+				int i = back_path.size() - 1;
 
-    // 맵 크기 출력
-    cout << map_size << " \t";
+				this->x += back_path[i].first;
+				this->y += back_path[i].second;
+				map.map[this->x][this->y] = 2;
+				move_calc += 1;
 
-    // 청소 면적 출력
-    float coverage_rate = ((float)coverage / (float)room_size) * 100;
-    cout << coverage_rate << " \t";
+				back_path.pop_back();
+				memory_calc += 1;
+			}
 
-    // 연산 횟수 출력
-    cout << calc_cost << " \t";
+			calc_cost = map_calc + move_calc + memory_calc;
+			time_cost++;
 
-    // 소요 시간 출력
-    cout << time_cost << " ";
+			if (type == 1) {
+				if (half_time_limit <= time_cost) {
+					break;
+				}
+			}
+
+			// 청소 과정 출력 (데모 동영상 용)
+			this->renderMap(map);
+		}
+
+		coverage = 0;
+
+		for (int i = 0; i < map.width; i++)
+			for (int j = 0; j < map.height; j++)
+				if (map.map[i][j] == 3)
+					coverage++;
+
+		// 1번 : 시간제한을 두고 알고리즘을 수행
+		if (type == 1) {
+			if (coverage / room_size == 1) {
+				break;
+			}
+
+			if (half_time_limit <= time_cost) {
+				break;
+			}
+		}
+
+		// 2번 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
+		if (type == 2) {
+			if (coverage / room_size == 1) {
+				break;
+			}
+		}
+	}
+
+	/*
+	// 시작 위치 복귀
+	for (int i = back_path.size() - 1; i >= 0; i--) {
+		map.map[this->x][this->y] = 3;
+
+		this->x += back_path[i].first;
+		this->y += back_path[i].second;
+		map.map[this->x][this->y] = 2;
+
+		calc_cost += 3;
+		time_cost++;
+
+		this->renderMap(map);
+	}
+	*/
+	cout << "맵크기 커버리지 연산횟수 소요시간" << endl;
+
+	// 맵 크기 출력
+	cout << map_size << " ";
+
+	// 청소 면적 출력
+	float coverage_rate = ((float)coverage / (float)room_size) * 100;
+	cout << coverage_rate << " ";
+
+	// 연산 횟수 출력
+	cout << calc_cost << " ";
+
+	// 소요 시간 출력
+	cout << time_cost << " ";
+
 }
 
 void robot::randomMove(Map map, int type)
 {
-    srand((unsigned)time(NULL));
+	for (int i = 0; i < map.width; i++) {
+		for (int j = 0; j < map.height; j++) {
+			if (map.map[i][j] == 2) {
+				this->x = i;
+				this->y = j;
+			}
+		}
+	}
 
-    int map_calc = 0;
-    int memory_calc = 0;
-    int move_calc = 0;
-    int calc_cost = 0;
-    //연산 종류별로 계산비용 구분
+	srand((unsigned)time(NULL));
 
-    int time_cost = 0; // 소요 시간
-    int time_limit = 100; // 시간 제한(잔여 배터리)
+	int calc_cost = 0; // 연산 횟수
+	int time_cost = 0; // 소요 시간
+	int time_limit = 100; // 시간 제한
+	int coverage = 0; // 청소 면적
+	int room_size = 0; // 방 면적(벽제외)
 
-    bool endflag = false;
+	for (int i = 0; i < map.width; i++)
+		for (int j = 0; j < map.height; j++)
+			if (map.map[i][j] != 1)
+				room_size++;
 
-    int coverage = 0; // 청소 면적
-    int room_size = 0; // 방 면적
-    for (int i = 0; i < map.width; i++)
-        for (int j = 0; j < map.height; j++)
-            if (map.map[i][j] != 1)
-                room_size++;
+	int map_size = map.width * map.height;
 
-    // 로봇 시작위치 찾기
-    for (int i = 0; i < map.width; i++)
-    {
-        for (int j = 0; j < map.height; j++)
-        {
-            if (map.map[i][j] == 2)
-            {
-                this->x = i;
-                this->y = j;
-                memory_calc += 1;
-                break;
-            }
-        }
-    }
-    int map_size = map.width * map.height; //전체 면적
+	// 복귀 경로
+	vector<pair<int, int> > back_path;
+	int half_time_limit = time_limit / 2;
 
-    while (!endflag) {
-        int dir = rand() % 4;
-        int distance = (rand() % max(map.height, map.width)) + 1;
-        move_calc += 1;
+	while (true) {
+		int dir = rand() % 4;
+		int distance = (rand() % max(map.height, map.width)) + 1;
+		calc_cost += 2;
 
-        while ((distance-- > 0) && (map.map[this->x + dx[dir]][this->y + dy[dir]] != 1)) {
-            map.map[this->x][this->y] = 3; // 청소 완료 표시
-            map_calc += 1;
+		while ((distance-- > 0) && (map.map[this->x + dx[dir]][this->y + dy[dir]] != 1)) {
+			map.map[this->x][this->y] = 3; // 청소 완료 표시
 
-            this->x += dx[dir];
-            this->y += dy[dir];
-            map.map[this->x][this->y] = 2;
-            move_calc += 1;
+			this->x += dx[dir];
+			this->y += dy[dir];
+			map.map[this->x][this->y] = 2;
 
-            time_cost++;
+			back_path.push_back({ dx[dir] * (-1), dy[dir] * (-1) });
 
-            // 청소 과정 출력 (데모 동영상 용)
-            this->renderMap(map);
+			calc_cost += 3;
+			time_cost++;
+			if (type == 1) {
+				if (half_time_limit <= time_cost) {
+					break;
+				}
+			}
 
-            // 1번 : 시간제한을 두고 알고리즘을 수행
-            if (type == 1) {
-                if (time_limit <= time_cost) {
-                    endflag = true;
-                    break;
-                }
-            }
+			// 청소 과정 출력 (데모 동영상 용)
+			this->renderMap(map);
+		}
 
-            coverage = 1;
-            // 커버리지 측정
-            for (int i = 0; i < map.width; i++)
-                for (int j = 0; j < map.height; j++)
-                    if (map.map[i][j] == 3)
-                        coverage++;
+		coverage = 0;
 
-            // 2번 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
-            if (type == 2) {
-                if (coverage / room_size == 1) {
-                    endflag = true;
-                    break;
-                }
-            }
+		for (int i = 0; i < map.width; i++)
+			for (int j = 0; j < map.height; j++)
+				if (map.map[i][j] == 3)
+					coverage++;
 
-            
-        } 
-    }
-    
-    calc_cost = map_calc + move_calc + memory_calc;
+		// 1번 : 시간제한을 두고 알고리즘을 수행
+		if (type == 1) {
+			if (half_time_limit <= time_cost) {
+				break;
+			}
+		}
 
-    cout << "맵크기 커버리지 연산횟수 소요시간" << endl;
+		// 2번 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
+		if (type == 2) {
+			if (coverage / room_size == 1) {
+				break;
+			}
+		}
+	}
 
-    // 맵 크기 출력
-    cout << map_size << " ";
+	// 시작 위치 복귀
+	for (int i = back_path.size() - 1; i >= 0; i--) {
+		map.map[this->x][this->y] = 3;
+		this->x += back_path[i].first;
+		this->y += back_path[i].second;
+		map.map[this->x][this->y] = 2;
 
-    // 청소 면적 출력
-    float coverage_rate = ((float)coverage / (float)room_size) * 100;
-    cout << coverage_rate << " ";
+		calc_cost += 3;
+		time_cost++;
 
-    // 연산 횟수 출력
-    cout << calc_cost << " ";
+		this->renderMap(map);
+	}
 
-    // 소요 시간 출력
-    cout << time_cost << " ";
+	cout << "맵크기 커버리지 연산횟수 소요시간" << endl;
+
+	// 맵 크기 출력
+	cout << map_size << " ";
+
+	// 청소 면적 출력
+	float coverage_rate = ((float)coverage / (float)room_size) * 100;
+	cout << coverage_rate << " ";
+
+	// 연산 횟수 출력
+	cout << calc_cost << " ";
+
+	// 소요 시간 출력
+	cout << time_cost << " ";
 }
 
 void robot::spinMove(Map map, int type)
 {
-    srand((unsigned)time(NULL));
+	for (int i = 0; i < map.width; i++)
+	{
+		for (int j = 0; j < map.height; j++)
+		{
+			if (map.map[i][j] == 2)
+			{
+				this->x = i;
+				this->y = j;
+			}
+		}
+	}
 
-    int map_calc = 0;
-    int memory_calc = 0;
-    int move_calc = 0;
-    int calc_cost = 0;
-    //연산 종류별로 계산비용 구분
-
-    int time_cost = 0; // 소요 시간
-    int time_limit = 100; // 시간 제한(잔여 배터리)
-
-    bool traceflag = false;
-
-    int coverage = 0; // 청소 면적
-    int room_size = 0; // 방 면적
-    for (int i = 0; i < map.width; i++)
-        for (int j = 0; j < map.height; j++)
-            if (map.map[i][j] != 1)
-                room_size++;
-    int map_size = map.width * map.height; //전체 면적
+	srand((unsigned)time(NULL));
 
 
-    enum dirc { DOWN, UP, RIGHT, LEFT }; //방향 가독성
+	int map_calc = 0;
+	int memory_calc = 0;
+	int move_calc = 0;
+	int calc_cost = 0;
+	//연산 종류별로 계산비용 구분
 
-    vector<pair<int, int> > back_path; //백트래킹용 추가 내장 메모리
+	int time_cost = 0; // 소요 시간
+	int time_limit = 100; // 시간 제한(잔여 배터리)
+	int half_time_limit = time_limit / 2;
 
-    // 로봇 시작위치 찾기
-    for (int i = 0; i < map.width; i++)
-    {
-        for (int j = 0; j < map.height; j++)
-        {
-            if (map.map[i][j] == 2)
-            {
-                this->x = i;
-                this->y = j;
-                memory_calc += 1;
-                break;
-            }
-        }
-    }
+	int coverage = 0; // 청소 면적
+	int room_size = 0; // 방 면적
+	
+	int num_blank = 0; //청소 안된 면적
 
-    // 1칸 이동
-    while (true)
-    {
-        map.map[this->x][this->y] = 3; // 청소 완료 표시
-        map_calc += 1;
-        // 아래쪽이 벽일때
-        if ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 1)) 
-        {
-            if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0) //1. 아래가 벽이고 왼쪽이 벽이 아닐때 (좌이동)
-            {
-                this->x += dx[LEFT];
-                this->y += dy[LEFT];
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+	for (int i = 0; i < map.width; i++)
+		for (int j = 0; j < map.height; j++)
+		{
+			if (map.map[i][j] != 1)
+				room_size++;
+			if (map.map[i][j] == 0)
+				num_blank++;
+		}
 
-                back_path.push_back({ dx[LEFT] * (-1), dy[LEFT] * (-1) });
-                memory_calc += 1;
-            }
-            else if (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0) // 2.아래,왼쪽이 벽인데 위로 이동가능할때 (좌상이동)
-            {
-                this->x += dx[UP];
-                this->y += dy[UP];
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+	int map_size = map.width * map.height;
+	int dir;
+	enum dirc { DOWN, UP, RIGHT, LEFT };
 
-                back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
-                memory_calc += 1;
-            }           
-        }
-        // 왼쪽이 벽일때
-        else if ((map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 1)) // 상, 우상 이동
-        {
-            if (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0) //1. 왼쪽이 벽이고 위쪽이 벽이 아닐때 (상이동)
-            {
-                this->x += dx[UP];
-                this->y += dy[UP];
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+	dir = LEFT;	//처음 방향 왼쪽 설정
+	
 
-                back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
-                memory_calc += 1;
-            }
-            else if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0) // 2.위,왼쪽이 벽인데 오른쪽으로 이동가능할때 (좌상이동)
-            {
-                this->x += dx[RIGHT];
-                this->y += dy[RIGHT];
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+	// 복귀 경로
+	vector<pair<int, int> > back_path;
+	
 
-                back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) });
-                memory_calc += 1;
-            }
-        }
-        // 위쪽이 벽일때
-        else if ((map.map[this->x + dx[UP]][this->y + dy[UP]] == 1)) // 우, 우하 이동
-        {
-            if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0) //1. 위쪽이 벽이고 오른쪽이 벽이 아닐때 (우이동)
-            {
-                this->x += dx[RIGHT];
-                this->y += dy[RIGHT];
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+	while (true) {
 
-                back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) });
-                memory_calc += 1;
-            }
-            else if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0) // 2. 위, 오른쪽이 벽인데 아래쪽으로 이동가능할떄 (우하이동)
-            {
-                this->x += dx[DOWN];
-                this->y += dy[DOWN];
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+		while ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) || (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) ||
+			(map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1))
+		{
 
-                back_path.push_back({ dx[DOWN] * (-1), dy[DOWN] * (-1) });
-                memory_calc += 1;
-            }
-        }
-        // 오른쪽이 벽일때
-        else if ((map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 1)) // 하, 좌하 이동
-        {
-            if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0) //1. 오른쪽이 벽이고 아래쪽이 벽이 아닐때 (하이동)
-            {
-                this->x += dx[DOWN];
-                this->y += dy[DOWN];
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+			map.map[this->x][this->y] = 3; // 청소 완료 표시
+			map_calc += 1;
 
-                back_path.push_back({ dx[DOWN] * (-1), dy[DOWN] * (-1) });
-                memory_calc += 1;
-            }
-            else if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0) // 2. 오른쪽,아래쪽이 벽이고 왼쪽쪽이 벽이 아닐때 (좌하이동)
-            {
-                this->x += dx[LEFT];
-                this->y += dy[LEFT];
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+			if ((map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1) && (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 3))
+			{
+				this->x += dx[LEFT];
+				this->y += dy[LEFT];
+				map.map[this->x][this->y] = 2;
+				move_calc += 1;
 
-                back_path.push_back({ dx[LEFT] * (-1), dy[LEFT] * (-1) });
-                memory_calc += 1;
-            }
-        }
-        //오른쪽위모서리
-        else if ((map.map[this->x + 1][this->y - 1] != 0 && map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0))
-        {
-            this->x += dx[LEFT];
-            this->y += dy[LEFT];
-            map.map[this->x][this->y] = 2;
-            move_calc += 1;
+				back_path.push_back({ dx[LEFT] * (-1), dy[LEFT] * (-1) });
+				memory_calc += 1;
+			}
+			else if ((map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) && (map.map[this->x + dx[UP]][this->y + dy[UP]] != 3))
+			{
+				this->x += dx[UP];
+				this->y += dy[UP];
+				map.map[this->x][this->y] = 2;
+				move_calc += 1;
 
-            back_path.push_back({ dx[LEFT] * (-1), dy[LEFT] * (-1) });
-            memory_calc += 1;
-        }
-        //오른쪽아래모서리
-        else if ((map.map[this->x - 1][this->y - 1] != 0 && map.map[this->x + dx[UP]][this->y + dy[UP]] == 0))
-        {
-            this->x += dx[UP];
-            this->y += dy[UP];
-            map.map[this->x][this->y] = 2;
-            move_calc += 1;
+				back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
+				memory_calc += 1;
+			}
+			else if ((map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) && (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 3))
+			{
+				this->x += dx[RIGHT];
+				this->y += dy[RIGHT];
+				map.map[this->x][this->y] = 2;
+				move_calc += 1;
 
-            back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
-            memory_calc += 1;
-        }
-        //왼쪽아래모서리
-        else if ((map.map[this->x - 1][this->y + 1] != 0 && map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0))
-        {
-            this->x += dx[RIGHT];
-            this->y += dy[RIGHT];
-            map.map[this->x][this->y] = 2;
-            move_calc += 1;
+				back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) });
+				memory_calc += 1;
+			}
+			else if ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) && (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 3))
+			{
+				this->x += dx[DOWN];
+				this->y += dy[DOWN];
+				map.map[this->x][this->y] = 2;
+				move_calc += 1;
 
-            back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) });
-            memory_calc += 1;
-        }
-        //왼쪽위 모서리
-        else if ((map.map[this->x + 1][this->y + 1] != 0 && map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0))
-        {
-            this->x += dx[DOWN];
-            this->y += dy[DOWN];
-            map.map[this->x][this->y] = 2;
-            move_calc += 1;
+				back_path.push_back({ dx[DOWN] * (-1), dy[DOWN] * (-1) });
+				memory_calc += 1;
+			}
+			//사방이 벽 혹은 이미 청소했던 공간일 경우, 가장 가까운 빈공간으로 백트래킹하여 이동
+			else /*if (!((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0) || (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0) ||
+				 (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0) || (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0)))*/
+			{
+				int i = back_path.size() - 1;
 
-            back_path.push_back({ dx[DOWN] * (-1), dy[DOWN] * (-1) });
-            memory_calc += 1;     
-        }
-        else 
-        {
-            if (back_path.size() > 0)
-            {
-                int i = back_path.size() - 1;
+				this->x += back_path[i].first;
+				this->y += back_path[i].second;
+				map.map[this->x][this->y] = 2;
+				move_calc += 1;
 
-                this->x += back_path[i].first;
-                this->y += back_path[i].second;
-                map.map[this->x][this->y] = 2;
-                move_calc += 1;
+				back_path.pop_back();
+				memory_calc += 1;
+			}
 
-                back_path.pop_back();
-                memory_calc += 1;
-            }
-            else
-            {
-                map.map[this->x][this->y] = 3;
-                map_calc += 1;
-            }
-        }
+			calc_cost = map_calc + move_calc + memory_calc;
+			time_cost++;
 
-        time_cost++;
+			if (type == 1) {
+				if (half_time_limit <= time_cost) {
+					break;
+				}
+			}
 
-        // 청소 과정 출력 (데모 동영상 용)
-        this->renderMap(map);
-                           
-        // 1번 : 시간제한을 두고 알고리즘을 수행
-        if (type == 1) {
-            if (time_limit <= time_cost) {
-                break;
-            }
-        }
-
-        coverage = 1;
-        // 커버리지 측정
-        /*for (int i = 0; i < map.width; i++)
-            for (int j = 0; j < map.height; j++)
-                if (map.map[i][j] == 3)
-                    coverage++;*/
-
-        // 2번 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
-        if (type == 2) {
-            if (coverage / room_size == 1) {
-                break;
-            }
-        }
-    }
-
-
-    this->renderMap(map);
-
-    calc_cost = map_calc + move_calc + memory_calc;
-
-    cout << "맵크기 / 커버리지 / 연산횟수 / 소요시간" << endl;
-
-    // 맵 크기 출력
-    cout << map_size << " \t";
-
-    // 청소 면적 출력
-    float coverage_rate = ((float)coverage / (float)room_size) * 100;
-    cout << coverage_rate << " \t";
-
-    // 연산 횟수 출력
-    cout << calc_cost << " \t";
-
-    // 소요 시간 출력
-    cout << time_cost << " ";
+			// 청소 과정 출력 (데모 동영상 용)
+			this->renderMap(map);
+		}
+	}
 }
