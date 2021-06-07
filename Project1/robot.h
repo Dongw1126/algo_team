@@ -114,7 +114,7 @@ void robot::zigzagMove(Map map, int type)
         map.map[this->x][this->y] = 3; // 청소 완료 표시
         map_calc += 1;
 
-        if ((map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1) && (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 3))
+        if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0)
         {
             this->x += dx[LEFT];
             this->y += dy[LEFT];
@@ -124,7 +124,7 @@ void robot::zigzagMove(Map map, int type)
             back_path.push_back({ dx[LEFT] * (-1), dy[LEFT] * (-1) });
             memory_calc += 1;
         }
-        else if ((map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) && (map.map[this->x + dx[UP]][this->y + dy[UP]] != 3))
+        else if (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0)
         {
             this->x += dx[UP];
             this->y += dy[UP];
@@ -134,7 +134,7 @@ void robot::zigzagMove(Map map, int type)
             back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
             memory_calc += 1;
         }
-        else if ((map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) && (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 3))
+        else if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0)
         {
             this->x += dx[RIGHT];
             this->y += dy[RIGHT];
@@ -144,7 +144,7 @@ void robot::zigzagMove(Map map, int type)
             back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) });
             memory_calc += 1;
         }
-        else if ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) && (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 3))
+        else if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0 )
         {
             this->x += dx[DOWN];
             this->y += dy[DOWN];
@@ -339,6 +339,8 @@ void robot::spinMove(Map map, int type)
     int time_cost = 0; // 소요 시간
     int time_limit = 100; // 시간 제한(잔여 배터리)
 
+    bool traceflag = false;
+
     int coverage = 0; // 청소 면적
     int room_size = 0; // 방 면적
     for (int i = 0; i < map.width; i++)
@@ -372,9 +374,104 @@ void robot::spinMove(Map map, int type)
     {
         map.map[this->x][this->y] = 3; // 청소 완료 표시
         map_calc += 1;
+        // 아래쪽이 벽일때
+        if ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 1)) 
+        {
+            if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0) //1. 아래가 벽이고 왼쪽이 벽이 아닐때 (좌이동)
+            {
+                this->x += dx[LEFT];
+                this->y += dy[LEFT];
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
 
-        if (((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 1) || (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 3))
-            && (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1))
+                back_path.push_back({ dx[LEFT] * (-1), dy[LEFT] * (-1) });
+                memory_calc += 1;
+            }
+            else if (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0) // 2.아래,왼쪽이 벽인데 위로 이동가능할때 (좌상이동)
+            {
+                this->x += dx[UP];
+                this->y += dy[UP];
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
+
+                back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
+                memory_calc += 1;
+            }           
+        }
+        // 왼쪽이 벽일때
+        else if ((map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 1)) // 상, 우상 이동
+        {
+            if (map.map[this->x + dx[UP]][this->y + dy[UP]] == 0) //1. 왼쪽이 벽이고 위쪽이 벽이 아닐때 (상이동)
+            {
+                this->x += dx[UP];
+                this->y += dy[UP];
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
+
+                back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
+                memory_calc += 1;
+            }
+            else if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0) // 2.위,왼쪽이 벽인데 오른쪽으로 이동가능할때 (좌상이동)
+            {
+                this->x += dx[RIGHT];
+                this->y += dy[RIGHT];
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
+
+                back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) });
+                memory_calc += 1;
+            }
+        }
+        // 위쪽이 벽일때
+        else if ((map.map[this->x + dx[UP]][this->y + dy[UP]] == 1)) // 우, 우하 이동
+        {
+            if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0) //1. 위쪽이 벽이고 오른쪽이 벽이 아닐때 (우이동)
+            {
+                this->x += dx[RIGHT];
+                this->y += dy[RIGHT];
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
+
+                back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) });
+                memory_calc += 1;
+            }
+            else if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0) // 2. 위, 오른쪽이 벽인데 아래쪽으로 이동가능할떄 (우하이동)
+            {
+                this->x += dx[DOWN];
+                this->y += dy[DOWN];
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
+
+                back_path.push_back({ dx[DOWN] * (-1), dy[DOWN] * (-1) });
+                memory_calc += 1;
+            }
+        }
+        // 오른쪽이 벽일때
+        else if ((map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 1)) // 하, 좌하 이동
+        {
+            if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0) //1. 오른쪽이 벽이고 아래쪽이 벽이 아닐때 (하이동)
+            {
+                this->x += dx[DOWN];
+                this->y += dy[DOWN];
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
+
+                back_path.push_back({ dx[DOWN] * (-1), dy[DOWN] * (-1) });
+                memory_calc += 1;
+            }
+            else if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0) // 2. 오른쪽,아래쪽이 벽이고 왼쪽쪽이 벽이 아닐때 (좌하이동)
+            {
+                this->x += dx[LEFT];
+                this->y += dy[LEFT];
+                map.map[this->x][this->y] = 2;
+                move_calc += 1;
+
+                back_path.push_back({ dx[LEFT] * (-1), dy[LEFT] * (-1) });
+                memory_calc += 1;
+            }
+        }
+        //오른쪽위모서리
+        else if ((map.map[this->x + 1][this->y - 1] != 0 && map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] == 0))
         {
             this->x += dx[LEFT];
             this->y += dy[LEFT];
@@ -384,7 +481,8 @@ void robot::spinMove(Map map, int type)
             back_path.push_back({ dx[LEFT] * (-1), dy[LEFT] * (-1) });
             memory_calc += 1;
         }
-        else if ((map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) && (map.map[this->x + dx[UP]][this->y + dy[UP]] != 3))
+        //오른쪽아래모서리
+        else if ((map.map[this->x - 1][this->y - 1] != 0 && map.map[this->x + dx[UP]][this->y + dy[UP]] == 0))
         {
             this->x += dx[UP];
             this->y += dy[UP];
@@ -394,7 +492,8 @@ void robot::spinMove(Map map, int type)
             back_path.push_back({ dx[UP] * (-1), dy[UP] * (-1) });
             memory_calc += 1;
         }
-        else if ((map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) && (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 3))
+        //왼쪽아래모서리
+        else if ((map.map[this->x - 1][this->y + 1] != 0 && map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] == 0))
         {
             this->x += dx[RIGHT];
             this->y += dy[RIGHT];
@@ -404,7 +503,8 @@ void robot::spinMove(Map map, int type)
             back_path.push_back({ dx[RIGHT] * (-1), dy[RIGHT] * (-1) });
             memory_calc += 1;
         }
-        else if ((map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) && (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 3))
+        //왼쪽위 모서리
+        else if ((map.map[this->x + 1][this->y + 1] != 0 && map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] == 0))
         {
             this->x += dx[DOWN];
             this->y += dy[DOWN];
@@ -412,10 +512,9 @@ void robot::spinMove(Map map, int type)
             move_calc += 1;
 
             back_path.push_back({ dx[DOWN] * (-1), dy[DOWN] * (-1) });
-            memory_calc += 1;
+            memory_calc += 1;     
         }
-        //사방이 벽 혹은 이미 청소했던 공간일 경우,저장해둔 가장 가까운 빈공간으로 이동
-        else
+        else 
         {
             if (back_path.size() > 0)
             {
@@ -450,10 +549,10 @@ void robot::spinMove(Map map, int type)
 
         coverage = 1;
         // 커버리지 측정
-        for (int i = 0; i < map.width; i++)
+        /*for (int i = 0; i < map.width; i++)
             for (int j = 0; j < map.height; j++)
                 if (map.map[i][j] == 3)
-                    coverage++;
+                    coverage++;*/
 
         // 2번 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
         if (type == 2) {
