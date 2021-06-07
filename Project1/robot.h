@@ -78,7 +78,7 @@ void robot::zigzagMove(Map map, int type)
     //연산 종류별로 계산비용 구분
 
     int time_cost = 0; // 소요 시간
-    int time_limit = 100; // 시간 제한(잔여 배터리)
+    int time_limit = 200; // 시간 제한(잔여 배터리)
     int half_time_limit = time_limit / 2;
 
     int coverage = 0; // 청소 면적
@@ -221,14 +221,12 @@ void robot::zigzagMove(Map map, int type)
         //출발점으로 돌아왔을시에 정지한다
         if (this->x == iX && this->y == iY)
             break;
-
         //로봇이 시작점의 오른쪽방향
         if (this->y - iY > 0) 
         {
             // 로봇이 시작점의 오른쪽 위 방향, 유효 : 왼쪽, 아래
             if (this->x - iX < 0) 
             {
-
                 map.map[this->x][this->y] = 3;
                 switch (back_path[i].first)
                 {
@@ -318,21 +316,55 @@ void robot::zigzagMove(Map map, int type)
                 }
                 
             }
-            // 로봇이 출발점과 같은 y축 위에있을때
-            else 
+            // 로봇이 출발점의 오른쪽에서 같은 y축 위에있을때
+            else if (this->x == iX)
             {
+                map.map[this->x][this->y] = 3;
+                switch (back_path[i].first)
+                {
+                case 0:
 
+                    if (back_path[i].second == 1) // 오른쪽이동
+                    {
+                        if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) //우측진행가능시
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    else //  왼쪽이동
+                    {
+                        if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1) //왼쪽진행가능시
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    break;
+
+                case -1: // 위로 이동               
+                    if (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) //위로진행가능시
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+
+                case 1: // 아래로 이동               
+                    if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) // 아래로 진행할수 있을때만
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+                }
             }
-
-            map.map[this->x][this->y] = 2;
-            back_path.pop_back();
-            this->renderMap(map);
         }
         // 로봇이 시작지점 왼쪽방향
         else if (this->y - iY < 0 )
         {
             // 로봇이 시작점의 왼쪽 위 방향, 유효 : 오른쪽, 아래
-            if (this->x - iX <= 0) 
+            if (this->x - iX < 0) 
             {
                 map.map[this->x][this->y] = 3;
                 switch (back_path[i].first)
@@ -378,7 +410,7 @@ void robot::zigzagMove(Map map, int type)
 
             }
             //로봇이 시작점의 왼쪽 아래 방향, 유효 : 오른쪽, 위
-            else 
+            else if(this->x - iX > 0)
             {
                 map.map[this->x][this->y] = 3;
                 switch (back_path[i].first)
@@ -424,16 +456,145 @@ void robot::zigzagMove(Map map, int type)
 
                 
             }
-        }
-        // 로봇이 출발점과 같은 y축 위에있을때
-        else 
-        {
+            //로봇이 출발점의 왼쪽에서 같은 y축 위일때
+            else
+            {
+                map.map[this->x][this->y] = 3;
+                switch (back_path[i].first)
+                {
+                case 0:
 
+                    if (back_path[i].second == 1) // 오른쪽이동
+                    {
+                        if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) //우측진행가능시
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    else //  왼쪽이동
+                    {
+                        if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1) //왼쪽진행가능시
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    break;
+
+                case -1: // 위로 이동               
+                    if (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) //위로진행가능시
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+
+                case 1: // 아래로 이동               
+                    if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) // 아래로 진행할수 있을때만
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+                }
+            }
+        }
+        // 로봇이 출발점과 같은 x축 위에있을때
+        else if(this->y == iY)
+        {
+            //출발점보다 위쪽일때 
+            if(this->x - iX < 0) 
+            {
+                map.map[this->x][this->y] = 3;
+                switch (back_path[i].first)
+                {
+                case 0:
+
+                    if (back_path[i].second == 1) // 오른쪽이동
+                    {
+                        if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) //우측진행가능시
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    else //  왼쪽이동
+                    {
+                        if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1) //왼쪽진행가능시
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    break;
+
+                case -1: // 위로 이동               
+                    if (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) //위로진행가능시
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+
+                case 1: // 아래로 이동               
+                    if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) // 아래로 진행할수 있을때만
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+                }
+            }
+            //출발점보다 아래쪽일때
+            else if (this->x - iX > 0)
+            {
+                map.map[this->x][this->y] = 3;
+                switch (back_path[i].first)
+                {
+                case 0:
+
+                    if (back_path[i].second == 1) // 오른쪽이동
+                    {
+                        if (map.map[this->x + dx[RIGHT]][this->y + dy[RIGHT]] != 1) //우측진행가능시
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    else //  왼쪽이동
+                    {
+                        if (map.map[this->x + dx[LEFT]][this->y + dy[LEFT]] != 1) //왼쪽진행가능시
+                        {
+                            this->x += back_path[i].first;
+                            this->y += back_path[i].second;
+                        }
+                    }
+                    break;
+
+                case -1: // 위로 이동               
+                    if (map.map[this->x + dx[UP]][this->y + dy[UP]] != 1) //위로진행가능시
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+
+                case 1: // 아래로 이동               
+                    if (map.map[this->x + dx[DOWN]][this->y + dy[DOWN]] != 1) // 아래로 진행할수 있을때만
+                    {
+                        this->x += back_path[i].first;
+                        this->y += back_path[i].second;
+                    }
+                    break;
+                }
+            }
         }
 
         map.map[this->x][this->y] = 2;
         back_path.pop_back();
         this->renderMap(map);
+        time_cost++;
     }
 
     this->renderMap(map);

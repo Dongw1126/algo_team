@@ -5,7 +5,10 @@ using namespace std;
 
 int main()
 {
-	Map m(blueprints[8]);
+	int mapc;
+	cout << "지도 선택 : ";
+	cin >> mapc;
+	Map m(blueprints[mapc]);
 	robot a;
 	int move, type, battery;
 	cout << "이동 방식을 선택하세요\n1: random move \n2: spin move\n3: zigzag move\n";
