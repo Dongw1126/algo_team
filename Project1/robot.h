@@ -574,14 +574,33 @@ void robot::spinMove(Map map, int type)
 
         if (traceflag == true)
         {
+            traceflag = false;
             if (back_path.size() > 0)
             {
                 int i = back_path.size() - 1;
+                map.map[this->x][this->y] = 3;
 
                 this->x += back_path[i].first;
                 this->y += back_path[i].second;
                 map.map[this->x][this->y] = 2;
                 move_calc += 1;
+
+                switch (back_path[i].first)
+                {
+                case 1:
+                    dir = RIGHT;
+                    break;
+                case -1:
+                    dir = LEFT;
+                    break;
+                case 0:
+                    if (back_path[i].second == 1)
+                        dir = UP;
+                    else if (back_path[i].second == -1)
+                        dir = DOWN;
+                    break;
+
+                }
 
                 back_path.pop_back();
                 memory_calc += 1;
@@ -597,20 +616,27 @@ void robot::spinMove(Map map, int type)
 
         // 청소 과정 출력 (데모 동영상 용)
         this->renderMap(map);
-                           
+                       
+        coverage = 1;
+
+        // 커버리지 측정
+        for (int i = 0; i < map.width; i++)
+            for (int j = 0; j < map.height; j++)
+                if (map.map[i][j] == 3)
+                    coverage++;
+
         // 1번 : 시간제한을 두고 알고리즘을 수행
         if (type == 1) {
+            if (coverage / room_size == 1) {
+                break;
+            }
+
             if (time_limit <= time_cost) {
                 break;
             }
         }
 
-        coverage = 1;
-        // 커버리지 측정
-        /*for (int i = 0; i < map.width; i++)
-            for (int j = 0; j < map.height; j++)
-                if (map.map[i][j] == 3)
-                    coverage++;*/
+        
 
         // 2번 : 시간제한을 두지않고 coverage 100%를 달성할 때까지 수행
         if (type == 2) {
